@@ -68,8 +68,13 @@ class BoatEnv(gym.Env):
             if self.state == 0 and wind_direction == 1:  # Moves from left to right
                 self.state = 1
                 reward = 2  # Transition between states
-            elif self.state == 1:  # Agent is already in the right box
-                reward = 4  # Hit the right wall
+            elif self.state == 1:  # Agent is in the right box
+                if wind_direction == 0:  # Wind blowing west
+                    self.state = 1
+                    reward = 4  # Hit the right wall
+                else:  # Wind blowing east
+                    self.state = 1
+                    reward = 3  # Stayed in right box (wind blocked movement)
             else:
                 reward = 1  # Stayed in the left box (wind blocked movement)
                 
@@ -77,12 +82,14 @@ class BoatEnv(gym.Env):
             if self.state == 1 and wind_direction == 0:  # Moves from right to left
                 self.state = 0
                 reward = 2  # Transition between states
-            elif self.state == 0:  # Agent is already in the left box
-                reward = 0  # Hit the left wall
-            else:
-                reward = 3  # Stayed in the right box (wind blocked movement)
+            elif self.state == 0:  # Agent is in the left box
+                if wind_direction == 1:  # Wind blowing east
+                    self.state = 0
+                    reward = 0  # Hit the left wall
+                else:  # Wind blowing west
+                    self.state = 0
+                    reward = 1  # Stayed in the left box (wind blocked movement)
 
-        # Return observation (state), reward, done (False), info (empty dict)
         return self.state, reward, False, {}
 
     def render(self, mode='human'):
