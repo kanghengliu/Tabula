@@ -77,8 +77,8 @@ class GridWorldEnv(gym.Env):
         if self.agent_pos in self.terminal_states:
             return self.agent_pos, 0, True, {}
 
-        # Stochastic action: 25% chance of doing the chosen action, 75% chance of random action
-        if random.random() > 0.25:
+        # Stochastic action: 25% chance of doing the random action, 75% chance of chosen action
+        if random.random() > 0.75: # CHANGE TO 0.25 before submission 
             action = self.action_space.sample()
 
         # Movement logic
