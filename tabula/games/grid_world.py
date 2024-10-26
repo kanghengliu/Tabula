@@ -70,11 +70,7 @@ class GridWorldEnv(gym.Env):
     def reset(self):
         """Reset the environment to the initial state."""
         self.agent_pos = self.start_pos
-
-        # make info an empty dictionary
-        info = {}
-
-        return self.agent_pos, info
+        return self.agent_pos
 
     def step(self, action):
         """Apply the action, return the next state, reward, done, and info."""
@@ -108,11 +104,9 @@ class GridWorldEnv(gym.Env):
         reward = self.grid[self.agent_pos]
 
         # Check if the state is terminal
-        terminated = self.agent_pos in self.terminal_states
+        done = self.agent_pos in self.terminal_states
 
-        truncated = False  # Truncation flag
-
-        return self.agent_pos, reward, terminated, truncated, {}
+        return self.agent_pos, reward, done, {}
 
     def render(self, mode='human'):
         """Render the grid and agent using Pygame."""
@@ -145,3 +139,25 @@ class GridWorldEnv(gym.Env):
     def close(self):
         """Close the Pygame window."""
         pygame.quit()
+
+
+# # Testing the environment
+# if __name__ == "__main__":
+#     env = GridWorldEnv()
+#     num_episodes = 100  # Define how many episodes to run
+    
+#     for episode in range(num_episodes):
+#         obs = env.reset()  # Reset environment at the start of each episode
+#         total_reward = 0  # Track the total reward per episode
+#         # print(f"Episode {episode + 1} starting...")
+        
+#         done = False
+#         while not done:  # Run until the episode is done (i.e., terminal state is reached)
+#             env.render()
+#             action = env.action_space.sample()  # Take random actions
+#             obs, reward, done, info = env.step(action)
+#             total_reward += reward
+            
+#         # print(f"Episode {episode + 1} finished. Total reward: {total_reward}")
+    
+#     env.close()  # Close the environment when done
