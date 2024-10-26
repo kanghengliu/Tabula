@@ -49,7 +49,11 @@ class BoatEnv(gym.Env):
     def reset(self):
         # Reset the environment, start in a random state
         self.state = np.random.choice([0, 1])
-        return self.state
+
+        # make info an empty dictionary
+        info = {}
+
+        return self.state, info
     
     def step(self, action):
         # Determine wind direction: 1 (east) with prob 0.7, 0 (west) with prob 0.3
@@ -90,7 +94,10 @@ class BoatEnv(gym.Env):
                     self.state = 0
                     reward = 1  # Stayed in the left box (wind blocked movement)
 
-        return self.state, reward, False, {}
+        terminated = False  # Termination flag
+        truncated = False  # Truncation flag
+
+        return self.state, reward, terminated, truncated, {}
 
     def render(self, mode='human'):
         # Clear the screen with a white background
