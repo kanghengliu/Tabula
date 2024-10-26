@@ -1,19 +1,18 @@
 import argparse
 import sys
 import os
+import pygame
 
 # add the project root to the system path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import pygame
-from tabula.games import boat  # Import boat environment
-from tabula.games import grid_world  # Import grid_world environment
+from tabula.games import boat, grid_world, geosearch  # Import environments
 from tabula.algorithms.dynamic_programming import DynamicProgramming  # Import DynamicProgramming
 from tabula.utils import Utils  # Import the Utils class
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Dynamic Programming Solver for Boat and GridWorld Environments')
-    parser.add_argument('--env', choices=['boat', 'grid_world'], default='boat',
+    parser.add_argument('--env', choices=['boat', 'grid_world', 'geosearch'], default='boat',
                         help='Specify the environment to solve: boat or grid_world')
     parser.add_argument('--method', choices=['value', 'policy'], default='value',
                         help='Specify the method to use: value iteration or policy iteration')
@@ -26,10 +25,14 @@ if __name__ == "__main__":
         env = boat.BoatEnv()
         episodes = 500
         max_steps = 50
-    else:
+    elif args.env == 'grid_world':
         env = grid_world.GridWorldEnv()
-        episodes = 10000
-        max_steps = 100
+        episodes = 5000
+        max_steps = 50
+    else:  # geosearch case
+        env = geosearch.GeosearchEnv()
+        episodes = 1000
+        max_steps = 25
 
     dp_solver = DynamicProgramming(env)
 

@@ -14,9 +14,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from tabula.utils import Utils  # Import the Utils class
 
 class DynamicProgramming:
-    def __init__(self, env, epsilon=0.1, gamma=0.9):
+    def __init__(self, env, gamma=0.9):
         self.env = env
-        self.epsilon = epsilon
         self.gamma = gamma
         
         # Determine the number of states based on observation space
@@ -51,7 +50,7 @@ class DynamicProgramming:
                         return
                 
                 # Select an action using epsilon-greedy from Utils
-                action = Utils.epsilon_greedy(self.env, self.policy, state, self.epsilon)
+                action = Utils.epsilon_greedy(self.env, self.policy, state)
 
                 # Take the action and observe the result
                 next_state, reward, terminated, _, _ = self.env.step(action)
@@ -83,7 +82,7 @@ class DynamicProgramming:
         avg_reward = total_reward / episodes  # Calculate average reward across all episodes
         print(f"Average reward during random simulation: {avg_reward:.2f}")
 
-    def compute_transition_model(self):
+    def compute_transition_model(self, verbose = False):
         """ Computes the transition probabilities p(s', r | s, a) from simulation data """
         self.transition_model = {}
         for (s, a), transitions in self.transition_counts.items():
@@ -100,11 +99,12 @@ class DynamicProgramming:
             self.transition_model[(s, a)] = {k: np.round(v / total, 3) for k, v in transition_matrix.items()}
 
         # Format and print transition model in a clean way
-        print("Transition Model (p(s', r | s, a)):")
-        for (s, a), transitions in self.transition_model.items():
-            print(f"State {int(s)}, Action {int(a)}:")
-            for (next_state, reward), prob in transitions.items():
-                print(f"    Next State: {int(next_state)}, Reward: {int(reward)}, Probability: {float(prob)}")
+        if verbose: # Print the transition model
+            print("Transition Model (p(s', r | s, a)):")
+            for (s, a), transitions in self.transition_model.items():
+                print(f"State {int(s)}, Action {int(a)}:")
+                for (next_state, reward), prob in transitions.items():
+                    print(f"    Next State: {int(next_state)}, Reward: {int(reward)}, Probability: {float(prob)}")
 
         # Make sure to return the transition model
         return self.transition_model

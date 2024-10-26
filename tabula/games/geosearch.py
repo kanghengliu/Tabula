@@ -176,8 +176,8 @@ class GeosearchEnv(gym.Env):
         # Update the display
         pygame.display.flip()
 
-        # Limit the frame rate
-        self.clock.tick(10)
+        # # Limit the frame rate
+        # self.clock.tick(10)
 
     def close(self):
         """Close the Pygame window."""

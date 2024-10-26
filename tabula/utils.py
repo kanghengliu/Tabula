@@ -1,8 +1,7 @@
 import pickle
 import pygame
 import numpy as np
-from tabula.games import boat  # Import boat environment
-from tabula.games import grid_world  # Import grid_world environment
+from tabula.games import boat, grid_world, geosearch  # Import environments
 
 class Utils:
     @staticmethod
@@ -44,8 +43,8 @@ class Utils:
     def draw_arrow(screen, x, y, direction, size=50, color=(0, 0, 0)):
         """Draws an arrow at the given (x, y) location, pointing in the given direction."""
         half_size = size // 2
-        arrow_head_size = size * 0.4  # Adjust size of the arrowhead
-        shaft_length = size * 0.3  # Length of the shaft
+        arrow_head_size = size * 0.6  # Adjust size of the arrowhead
+        shaft_length = size * 0.35  # Length of the shaft
 
         # Calculate the start and end points of the shaft
         if direction == 0:  # Left
@@ -85,26 +84,70 @@ class Utils:
 
     @staticmethod
     def render_optimal_policy(env, policy):
-        """Renders the optimal policy using arrows for both BoatEnv and GridWorldEnv."""
-        arrow_mapping = {0: 2, 1: 3, 2: 0, 3: 1}  # Left, Right, Up, Down for GridWorld
+        """Renders the optimal policy using arrows for BoatEnv, GridWorldEnv, and GeosearchEnv."""
+        arrow_mapping = {0: 2, 1: 3, 2: 0, 3: 1}  # Mapping for directions: Left, Right, Up, Down
 
-        # Check if the environment is GridWorldEnv
-        if isinstance(env, grid_world.GridWorldEnv):
+        # Check if the environment is GridWorldEnv or GeosearchEnv
+        if isinstance(env, (grid_world.GridWorldEnv, geosearch.GeosearchEnv)):
             env.screen.fill(env.colors['white'])  # Clear the screen
+
+            # Special handling for GeosearchEnv to render water and gold distributions
+            if isinstance(env, geosearch.GeosearchEnv):
+                # Define thresholds for water and gold visibility
+                water_threshold = 0.01
+                gold_threshold = 0.01
+
+                # Maximum value scaling for color adjustment
+                max_water_value = np.max(env.water_distribution)
+                max_gold_value = np.max(env.gold_distribution)
 
             for i in range(env.grid_height):
                 for j in range(env.grid_width):
-                    cell_color = env.colors['white']
+                    # For GeosearchEnv, handle water and gold visibility
+                    if isinstance(env, geosearch.GeosearchEnv):
+                        water_value = env.water_distribution[i, j]
+                        gold_value = env.gold_distribution[i, j]
 
-                    if (i, j) in env.walls:
-                        cell_color = env.colors['blue']
-                    elif (i, j) in env.terminal_states:
-                        cell_color = env.colors['red'] if env.grid[i, j] == -50 else env.colors['green']
+                        # Minimum scale factor to avoid complete blackness
+                        min_scale_factor = 0.4
 
+                        if water_value > water_threshold:
+                            # Darken water color based on its value (higher = darker)
+                            scale_factor = max(1 - (water_value / max_water_value), min_scale_factor)
+                            base_water_color = np.array(env.colors['water'])
+                            darkened_water_color = (base_water_color * scale_factor).astype(int)
+                            cell_color = tuple(darkened_water_color)
+                        elif gold_value > gold_threshold:
+                            # Darken gold color based on its value (higher = darker)
+                            scale_factor = max(1 - (gold_value / max_gold_value), min_scale_factor)
+                            base_gold_color = np.array(env.colors['gold'])
+                            darkened_gold_color = (base_gold_color * scale_factor).astype(int)
+                            cell_color = tuple(darkened_gold_color)
+                        else:
+                            # Use the pre-generated background color for each cell
+                            cell_color = env.background_color_grid[i, j]
+                    else:
+                        # For GridWorldEnv, default to white or specific colors based on state
+                        cell_color = env.colors['white']
+                        if hasattr(env, 'walls') and (i, j) in env.walls:
+                            cell_color = env.colors['blue']  # Wall cells
+                        if hasattr(env, 'terminal_states') and (i, j) in env.terminal_states:
+                            cell_color = env.colors['red'] if env.grid[i, j] == -50 else env.colors['green']
+
+                    # Draw the cell
                     pygame.draw.rect(env.screen, cell_color, pygame.Rect(j * env.cell_size, i * env.cell_size, env.cell_size, env.cell_size))
                     pygame.draw.rect(env.screen, env.colors['black'], pygame.Rect(j * env.cell_size, i * env.cell_size, env.cell_size, env.cell_size), 1)
 
-                    if (i, j) not in env.walls and (i, j) not in env.terminal_states:
+                    # Determine if we should draw an arrow
+                    draw_arrow = True
+                    if isinstance(env, grid_world.GridWorldEnv):
+                        # Skip arrows in wall or terminal states for GridWorldEnv
+                        if (hasattr(env, 'walls') and (i, j) in env.walls) or \
+                        (hasattr(env, 'terminal_states') and (i, j) in env.terminal_states):
+                            draw_arrow = False
+
+                    # Draw arrows based on the optimal policy if allowed
+                    if draw_arrow:
                         state_idx = i * env.grid_width + j
                         if state_idx < len(policy):
                             optimal_action = np.argmax(policy[state_idx])

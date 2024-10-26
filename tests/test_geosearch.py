@@ -40,8 +40,8 @@ try:
             if terminated or truncated:
                 break
 
-            # # Add a delay to better visualize the environment rendering
-            # time.sleep(0.1)
+            # Add a delay to better visualize the environment rendering
+            time.sleep(0.1)
 
         print(f"Episode {episode + 1} finished with Total Reward: {total_reward:.2f}")
 
