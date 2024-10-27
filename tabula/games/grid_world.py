@@ -5,6 +5,7 @@ import pygame
 import random
 import os  # For dynamic path management
 
+
 class GridWorldEnv(gym.Env):
     def __init__(self):
         super(GridWorldEnv, self).__init__()
@@ -17,19 +18,24 @@ class GridWorldEnv(gym.Env):
         self.action_space = spaces.Discrete(4)
 
         # Define observation space (grid positions)
-        self.observation_space = spaces.Tuple((spaces.Discrete(self.grid_height), spaces.Discrete(self.grid_width)))
+        self.observation_space = spaces.Tuple(
+            (spaces.Discrete(self.grid_height), spaces.Discrete(self.grid_width))
+        )
 
         # Grid reward structure
         self.grid = np.full((self.grid_height, self.grid_width), -1)
-        self.grid[1, 4] = -50  # Red cell
-        self.grid[5, 0] = -50  # Red cell
-        self.grid[5, 5] = 100  # Green cell
+        self.grid[1, 4] = -500  # Red cell
+        self.grid[5, 0] = -500  # Red cell
+        self.grid[5, 5] = 10000  # Green cell
+
+        # Set up step counter
+        self.num_step = 0
 
         # Terminal states
         self.terminal_states = [(1, 4), (5, 0), (5, 5)]
 
         # Walls (these positions are impassable)
-        self.walls = [(0, 2), (1, 2), (3, 2), (3, 3), (3, 4), (4,2), (5, 2)]
+        self.walls = [(0, 2), (1, 2), (3, 2), (3, 3), (3, 4), (4, 2), (5, 2)]
 
         # Start position
         self.start_pos = (0, 0)
@@ -47,34 +53,46 @@ class GridWorldEnv(gym.Env):
         self.clock = pygame.time.Clock()
 
         # Dynamic path to assets folder
-        current_dir = os.path.dirname(__file__)  # Get the directory of the current file (GridWorldEnv)
-        asset_path = os.path.join(current_dir, '../assets/robot.png')  # Build the full path to the robot image
+        current_dir = os.path.dirname(
+            __file__
+        )  # Get the directory of the current file (GridWorldEnv)
+        asset_path = os.path.join(
+            current_dir, "../assets/robot.png"
+        )  # Build the full path to the robot image
 
         # Load the robot image
         self.robot_image = pygame.image.load(asset_path)
-        self.robot_image = pygame.transform.scale(self.robot_image, (50, 50))  # Scale it to fit
+        self.robot_image = pygame.transform.scale(
+            self.robot_image, (50, 50)
+        )  # Scale it to fit
 
         # Load colors
         self.colors = {
-            'white': (255, 255, 255),
-            'black': (0, 0, 0),
-            'red': (255, 0, 0),
-            'green': (0, 255, 0),
-            'blue': (0, 0, 255),
-            'gray': (128, 128, 128),
+            "white": (255, 255, 255),
+            "black": (0, 0, 0),
+            "red": (255, 0, 0),
+            "green": (0, 255, 0),
+            "blue": (0, 0, 255),
+            "gray": (128, 128, 128),
         }
 
         # Load font
         self.font = pygame.font.SysFont(None, 24)
 
     def reset(self):
-        """Reset the environment to the initial state."""
-        self.agent_pos = self.start_pos
+        """Reset the environment to a random initial state."""
+        # Start in a random position that is not a terminal state or a wall
+        while True:
+            start_pos = (
+                random.randint(0, self.grid_height - 1),
+                random.randint(0, self.grid_width - 1),
+            )
+            if start_pos not in self.terminal_states and start_pos not in self.walls:
+                break
 
-        # make info an empty dictionary
-        info = {}
-
-        return self.agent_pos, info
+        self.agent_pos = start_pos
+        self.num_step = 0
+        return self.agent_pos, {}
 
     def step(self, action):
         """Apply the action, return the next state, reward, done, and info."""
@@ -82,7 +100,7 @@ class GridWorldEnv(gym.Env):
             return self.agent_pos, 0, True, {}
 
         # Stochastic action: 25% chance of doing the random action, 75% chance of chosen action
-        if random.random() > 0.75: # CHANGE TO 0.25 before submission 
+        if random.random() > 0.75:  # CHANGE TO 0.25 before submission
             action = self.action_space.sample()
 
         # Movement logic
@@ -112,29 +130,56 @@ class GridWorldEnv(gym.Env):
 
         truncated = False  # Truncation flag
 
-        return self.agent_pos, reward, terminated, truncated, {}
+        self.num_step += 1
 
-    def render(self, mode='human'):
+        return self.agent_pos, reward, terminated, truncated, self.num_step
+
+    def render(self, mode="human"):
         """Render the grid and agent using Pygame."""
-        self.screen.fill(self.colors['white'])
+        self.screen.fill(self.colors["white"])
 
         # Draw the grid and the agent
         for i in range(self.grid_height):
             for j in range(self.grid_width):
-                cell_color = self.colors['white']
+                cell_color = self.colors["white"]
 
                 if (i, j) in self.walls:
-                    cell_color = self.colors['blue']
+                    cell_color = self.colors["blue"]
                 elif (i, j) == (1, 4) or (i, j) == (5, 0):  # Red terminal states
-                    cell_color = self.colors['red']
+                    cell_color = self.colors["red"]
                 elif (i, j) == (5, 5):  # Green terminal state
-                    cell_color = self.colors['green']
+                    cell_color = self.colors["green"]
 
-                pygame.draw.rect(self.screen, cell_color, pygame.Rect(j * self.cell_size, i * self.cell_size, self.cell_size, self.cell_size))
-                pygame.draw.rect(self.screen, self.colors['black'], pygame.Rect(j * self.cell_size, i * self.cell_size, self.cell_size, self.cell_size), 1)
+                pygame.draw.rect(
+                    self.screen,
+                    cell_color,
+                    pygame.Rect(
+                        j * self.cell_size,
+                        i * self.cell_size,
+                        self.cell_size,
+                        self.cell_size,
+                    ),
+                )
+                pygame.draw.rect(
+                    self.screen,
+                    self.colors["black"],
+                    pygame.Rect(
+                        j * self.cell_size,
+                        i * self.cell_size,
+                        self.cell_size,
+                        self.cell_size,
+                    ),
+                    1,
+                )
 
         # Draw the robot image (agent)
-        self.screen.blit(self.robot_image, (self.agent_pos[1] * self.cell_size + self.cell_size // 4, self.agent_pos[0] * self.cell_size + self.cell_size // 4))
+        self.screen.blit(
+            self.robot_image,
+            (
+                self.agent_pos[1] * self.cell_size + self.cell_size // 4,
+                self.agent_pos[0] * self.cell_size + self.cell_size // 4,
+            ),
+        )
 
         # Update the display
         pygame.display.flip()
@@ -145,3 +190,4 @@ class GridWorldEnv(gym.Env):
     def close(self):
         """Close the Pygame window."""
         pygame.quit()
+
