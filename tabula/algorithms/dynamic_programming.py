@@ -1,12 +1,9 @@
 import numpy as np
-import random
 import sys
 import os
 import pygame
-import argparse
 import gymnasium as gym
 from gymnasium import spaces
-import pickle
 
 # Add the project root to the system path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
