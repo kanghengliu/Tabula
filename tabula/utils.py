@@ -2,7 +2,7 @@ import pickle
 import pygame
 import numpy as np
 from PIL import Image  # Add for GIF creation
-from tabula.games import boat, grid_world, geosearch  # Import environments
+from tabula.environments import *  # Import environments
 
 
 class Utils:
@@ -40,28 +40,15 @@ class Utils:
             q_values = action_values  # Here, action_values is already the Q-values for this specific state
             action_probs = np.ones(env.action_space.n) * epsilon / env.action_space.n
             best_action = np.argmax(q_values)
-            action_probs[best_action] += 1.0 - epsilon
+            action_probs[best_action] += (1.0 - epsilon)
         else:
             # Treat action_values as a policy and apply epsilon-greedy using state_idx
             state_idx = Utils._state_to_index(env, state)
             policy = action_values[state_idx]
             action_probs = (1 - epsilon) * policy + (epsilon / env.action_space.n)
 
-        # Min-max normalization to [0, 1] range
-        min_prob = action_probs.min()
-        max_prob = action_probs.max()
-
-        if max_prob == min_prob:
-            # If all values are the same, use a uniform distribution
-            action_probs = np.ones(env.action_space.n)
-        else:
-            # Normalize to [0, 1] range
-            action_probs = (action_probs - min_prob) / (max_prob - min_prob)
-
-        # Use the relative weights directly
-        return np.random.choice(
-            np.arange(env.action_space.n), p=action_probs / action_probs.sum()
-        )
+        # Choose an action based on the adjusted probabilities
+        return np.random.choice(np.arange(env.action_space.n), p=action_probs)
 
     @staticmethod
     def draw_arrow(screen, x, y, direction, size=50, color=(0, 0, 0)):
@@ -127,11 +114,11 @@ class Utils:
         }  # Mapping for directions: Left, Right, Up, Down
 
         # Check if the environment is GridWorldEnv or GeosearchEnv
-        if isinstance(env, (grid_world.GridWorldEnv, geosearch.GeosearchEnv)):
+        if isinstance(env, (GridWorldEnv, GeosearchEnv)):
             env.screen.fill(env.colors["white"])  # Clear the screen
 
             # Special handling for GeosearchEnv to render water and gold distributions
-            if isinstance(env, geosearch.GeosearchEnv):
+            if isinstance(env, GeosearchEnv):
                 # Define thresholds for water and gold visibility
                 water_threshold = 0.01
                 gold_threshold = 0.01
@@ -143,7 +130,7 @@ class Utils:
             for i in range(env.grid_height):
                 for j in range(env.grid_width):
                     # For GeosearchEnv, handle water and gold visibility
-                    if isinstance(env, geosearch.GeosearchEnv):
+                    if isinstance(env, GeosearchEnv):
                         water_value = env.water_distribution[i, j]
                         gold_value = env.gold_distribution[i, j]
 
@@ -213,7 +200,7 @@ class Utils:
 
                     # Determine if we should draw an arrow
                     draw_arrow = True
-                    if isinstance(env, grid_world.GridWorldEnv):
+                    if isinstance(env, GridWorldEnv):
                         # Skip arrows in wall or terminal states for GridWorldEnv
                         if (hasattr(env, "walls") and (i, j) in env.walls) or (
                             hasattr(env, "terminal_states")
@@ -239,7 +226,7 @@ class Utils:
             pygame.display.flip()
 
         # For BoatEnv
-        elif isinstance(env, boat.BoatEnv):
+        elif isinstance(env, BoatEnv):
             env.screen.fill((255, 255, 255))  # White background
 
             box_size = 150
@@ -309,7 +296,7 @@ class Utils:
     def run_optimal_policy(
         env,
         policy,
-        episodes=2,
+        episodes=5,
         max_steps=50,
         delay_ms=100,
         save_gif=False,
@@ -366,3 +353,4 @@ class Utils:
             total_reward / episodes
         )  # Calculate average reward across all episodes
         print(f"Average reward following optimal policy: {avg_reward:.2f}")
+

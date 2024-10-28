@@ -48,25 +48,25 @@ if __name__ == "__main__":
     # Create the output directory if it doesn't exist
     os.makedirs(args.file_path, exist_ok=True)
 
-    # Choose the environment based on the --env flag
-    if args.env == "boat":
-        env = BoatEnv()
-    elif args.env == "grid_world":
-        env = GridWorldEnv()
-    else:  # geosearch case
-        env = GeosearchEnv()
+# Choose the environment based on the --env flag
+if args.env == "boat":
+    env = BoatEnv()
+elif args.env == "grid_world":
+    env = GridWorldEnv()
+else:  # geosearch case
+    env = GeosearchEnv()
 
-    # Initialize the Temporal Difference solver
-    td_solver = TemporalDifference(env)
+# Initialize the Temporal Difference solver
+td_solver = TemporalDifference(env)
 
-    # Train the agent
-    print(f"Training Temporal Difference algorithm on {args.env} environment...")
-    td_solver.learn(episodes=args.episodes, max_steps=args.max_steps)
+# Train the agent
+print(f"Training Temporal Difference algorithm on {args.env} environment...")
+td_solver.learn(episodes=args.episodes, max_steps=args.max_steps)
 
-    # Derive and print the optimal policy
-    optimal_policy = td_solver.derive_policy()
-    print("Optimal Policy:")
-    print(optimal_policy)
+# Derive and print the optimal policy
+optimal_policy = td_solver.derive_policy()
+print("Optimal Policy:")
+print(optimal_policy)
 
     # Save paths for image and GIF
     image_filename = os.path.join(args.file_path, "policy_visualization.png")
@@ -91,14 +91,25 @@ if __name__ == "__main__":
                 pygame.quit()
                 sys.exit()
 
-    # Run optimal policy and save GIF if required
-    print(
-        "Running optimal policy with GIF capture..."
-        if args.save_gif
-        else "Running optimal policy..."
-    )
-    Utils.run_optimal_policy(
-        env, optimal_policy, save_gif=args.save_gif, gif_filename=gif_filename
-    )
+# Wait for user input
+print("Press any key in the pygame window to start simulation with the optimal policy...")
+waiting = True
+while waiting:
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+            waiting = False
+        elif event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
-    print("Done!")
+# Run optimal policy and save GIF if required
+print(
+    "Running optimal policy with GIF capture..."
+    if args.save_gif
+    else "Running optimal policy..."
+)
+Utils.run_optimal_policy(
+    env, optimal_policy, save_gif=args.save_gif, gif_filename=args.gif_filename
+)
+
+print("Done!")

@@ -21,7 +21,7 @@ if args.env == 'boat':
     max_steps = 50
 elif args.env == 'grid_world':
     env = grid_world.GridWorldEnv()
-    num_episodes = 10000
+    num_episodes = 20000
     max_steps = 50
 elif args.env == 'geosearch':
     env = geosearch.GeosearchEnv()
@@ -29,11 +29,11 @@ elif args.env == 'geosearch':
     max_steps = 50
 
 # Create Monte Carlo ES agent
-mc_agent = MonteCarloES(env, gamma=0.9, epsilon=0.1, verbose=False)
+mc_agent = MonteCarloES(env, gamma=0.9, epsilon=0.1)
 
 # Run Monte Carlo ES algorithm
 print(f"Running Monte Carlo ES for {num_episodes} episodes...")
-Q, policy = mc_agent.monte_carlo_es(num_episodes, max_steps)
+policy = mc_agent.train(episodes=num_episodes, max_steps=max_steps)
 
 # Print the Optimal Policy
 print("Optimal Policy:")
@@ -47,6 +47,7 @@ else:
     for state in range(env.observation_space.n):
         best_action = np.argmax(policy[state])
         print(f"State {state}: Action {best_action}")
+print(policy)
 
 # Initialize pygame
 pygame.init()

@@ -1,12 +1,8 @@
 import numpy as np
-import sys
-import os
 import pygame
+from collections import defaultdict
 import gymnasium as gym
 from gymnasium import spaces
-
-# Add the project root to the system path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from tabula.utils import Utils  # Import the Utils class
 
@@ -29,8 +25,10 @@ class DynamicProgramming:
         # Transition table p(s', r | s, a)
         self.transition_counts = {(s, a): [] for s in range(self.num_states) for a in range(self.env.action_space.n)}
 
-    def simulate(self, episodes, max_steps):
+    def simulate(self, episodes, max_steps, verbose=False):
         """Run a long simulation to gather p(s', r | s, a) and calculate the average reward."""
+        if verbose:
+            print(f"Running simulation for {episodes} episodes...")
         total_reward = 0  # Track total reward across all episodes
         
         for episode in range(episodes):
@@ -74,13 +72,16 @@ class DynamicProgramming:
 
             total_reward += episode_reward  # Add episode reward to total reward
 
-            if episode % (episodes/10) == 0:
+            if episode % (episodes/10) == 0 and verbose:
                 print(f"Episode {episode + 1}/{episodes}")
 
-        avg_reward = total_reward / episodes  # Calculate average reward across all episodes
-        print(f"Average reward during random simulation: {avg_reward:.2f}")
+        
+        if verbose:
+            print("Simulation complete.")
+            avg_reward = total_reward / episodes  # Calculate average reward across all episodes
+            print(f"\nAverage reward during random simulation: {avg_reward:.2f}")
 
-    def compute_transition_model(self, verbose = False):
+    def compute_transition_model(self, verbose=False):
         """ Computes the transition probabilities p(s', r | s, a) from simulation data """
         self.transition_model = {}
         for (s, a), transitions in self.transition_counts.items():
@@ -98,7 +99,7 @@ class DynamicProgramming:
 
         # Format and print transition model in a clean way
         if verbose: # Print the transition model
-            print("Transition Model (p(s', r | s, a)):")
+            print("\nTransition Model (p(s', r | s, a)):")
             for (s, a), transitions in self.transition_model.items():
                 print(f"State {int(s)}, Action {int(a)}:")
                 for (next_state, reward), prob in transitions.items():
@@ -107,7 +108,7 @@ class DynamicProgramming:
         # Make sure to return the transition model
         return self.transition_model
 
-    def value_iteration(self, max_iterations=1000, tol=1e-3):
+    def value_iteration(self, max_iterations=1000, tol=1e-3, verbose=False):
         """
         Perform value iteration to find the optimal policy.
         """
@@ -133,7 +134,8 @@ class DynamicProgramming:
             
             # Check for convergence
             if np.max(np.abs(new_value_table - self.value_table)) < tol:
-                print(f"Value iteration converged at iteration {i}")
+                if verbose:
+                    print(f"\nValue iteration converged at iteration {i}")
                 break  # Exit if the value function has converged
             
             self.value_table = new_value_table  # Update the value table
@@ -150,7 +152,7 @@ class DynamicProgramming:
 
         return self.policy
 
-    def policy_iteration(self, max_iterations=1000, tol=1e-3):
+    def policy_iteration(self, max_iterations=1000, tol=1e-3, verbose=False):
         """
         Perform policy iteration to find the optimal policy.
         """
@@ -184,37 +186,37 @@ class DynamicProgramming:
             self.value_table = new_value_table  # Update the value table
 
             if stable_policy:
-                print(f"Policy iteration converged at iteration {i}")
+                if verbose:
+                    print(f"\nPolicy iteration converged at iteration {i}")
                 break
 
         return self.policy
     
-    def train(self, max_steps=100, episodes=1000):
+    def train(self, max_steps=100, episodes=1000, verbose=False):
         """
         Train the agent using dynamic programming.
         """
         # Run a long simulation to gather p(s', r | s, a)
-        self.simulate(episodes=episodes, max_steps=max_steps)
+        self.simulate(episodes=episodes, max_steps=max_steps, verbose=verbose)
 
         # Compute the transition model
-        transition_model = self.compute_transition_model()
+        transition_model = self.compute_transition_model(verbose=verbose)
 
         # Use value iteration to find the optimal policy
         optimal_policy = self.value_iteration()
 
         return optimal_policy
-    
-
-import numpy as np
-import gymnasium as gym
-from collections import defaultdict
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-from tabula.utils import Utils
 
 class MonteCarloES:
     def __init__(self, env, epsilon=0.1, gamma=1.0):
+        """
+        Initialize the Monte Carlo ES (Exploring Starts) agent.
+        
+        Args:
+            env: OpenAI Gym environment
+            epsilon: Exploration rate for epsilon-greedy policy
+            gamma: Discount factor
+        """
         self.env = env
         self.gamma = gamma
         self.epsilon = epsilon
@@ -235,7 +237,15 @@ class MonteCarloES:
         return Utils._state_to_index(self.env, state)
 
     def generate_episode(self, max_steps=100):
-        """Generates an episode using epsilon-greedy policy."""
+        """
+        Generates an episode using epsilon-greedy policy.
+        
+        Args:
+            max_steps: Maximum number of steps per episode
+            
+        Returns:
+            list of (state, action, reward) tuples
+        """
         episode = []
         state = self.env.reset()[0]
         terminated = False
@@ -254,9 +264,6 @@ class MonteCarloES:
             next_state, reward, terminated, truncated, _ = self.env.step(action)
             episode.append((state, action, reward))
             
-            # if self.verbose:
-            #     print(f"Step {steps}: State={state}, Action={action}, Reward={reward}")
-            
             steps += 1
             if steps >= max_steps:
                 terminated = True
@@ -266,39 +273,181 @@ class MonteCarloES:
         return episode
 
     def update_policy(self, state):
-        """Update policy to be greedy with respect to Q-values."""
+        """
+        Update policy to be greedy with respect to Q-values.
+        
+        Args:
+            state: The state to update the policy for
+        """
         state_idx = self._get_state_index(state)
         best_action = np.argmax(self.Q[state_idx])
         self.policy[state_idx] = np.zeros(self.env.action_space.n)
         self.policy[state_idx][best_action] = 1.0
-        
-        # if self.verbose:
-        #     print(f"Policy updated for State {state}: Best Action = {best_action}")
 
-    def train(self, max_steps=100, episodes=1000):
-        """Performs Monte Carlo Exploring Starts."""
+    def train(self, max_steps=100, episodes=1000, verbose=False):
+        """
+        Performs Monte Carlo Exploring Starts training.
+        
+        Args:
+            max_steps: Maximum steps per episode
+            episodes: Number of episodes to train for
+            verbose: Whether to print training progress
+            
+        Returns:
+            Optimal policy as numpy array
+        """
+        if verbose:
+            print(f"Starting Monte Carlo ES training for {episodes} episodes...")
+
+        total_returns = []
+        action_counts = np.zeros(self.env.action_space.n)
+        q_value_updates = []
+
         for episode_num in range(1, episodes + 1):
-            # if self.verbose:
-            #     print(f"\n=== Starting Episode {episode_num} ===")
-                
             episode = self.generate_episode(max_steps=max_steps)
             G = 0
-            
-            # Process episode in reverse order
+            episode_q_updates = []
+
             for t in reversed(range(len(episode))):
                 state, action, reward = episode[t]
                 state_idx = self._get_state_index(state)
                 G = self.gamma * G + reward
                 
-                # Check if state-action pair appeared earlier
                 if (state_idx, action) not in [(self._get_state_index(x[0]), x[1]) for x in episode[:t]]:
+                    old_q = self.Q[state_idx][action]
                     self.returns[(state_idx, action)].append(G)
                     self.Q[state_idx][action] = np.mean(self.returns[(state_idx, action)])
-                    
-                    # if self.verbose:
-                    #     print(f"Updated Q-value for State {state}, Action={action}: Q[{state_idx}][{action}] = {self.Q[state_idx][action]}")
-                    
-                    # Update policy
+                    q_update = abs(self.Q[state_idx][action] - old_q)
+                    episode_q_updates.append(q_update)
                     self.update_policy(state)
-        
+                
+                action_counts[action] += 1
+
+            avg_q_update = np.mean(episode_q_updates) if episode_q_updates else 0
+            q_value_updates.append(avg_q_update)
+            total_returns.append(G)
+
+            if verbose and episode_num % (episodes // 10) == 0:
+                avg_return = np.mean(total_returns[-(episodes // 10):])
+                avg_recent_q_update = np.mean(q_value_updates[-(episodes // 10):])
+                print(f"Episode {episode_num}/{episodes} - "
+                      f"Average Return: {avg_return:.2f}, "
+                      f"Average Q-Value Update: {avg_recent_q_update:.4f}")
+
+        if verbose:
+            action_distribution = action_counts / np.sum(action_counts)
+            print("\nAction distribution across episodes:", 
+                  {i: f"{p:.3f}" for i, p in enumerate(action_distribution)})
+            print(f"Final Average Return: {np.mean(total_returns):.2f}")
+            print(f"Final Average Q-Value Update: {np.mean(q_value_updates):.4f}")
+
         return self.policy
+
+class TemporalDifference:
+    def __init__(self, env, epsilon=0.1, gamma=0.9, alpha=0.1):
+        self.env = env
+        self.epsilon = epsilon
+        self.gamma = gamma
+        self.alpha = alpha
+        
+        # Determine the number of states based on observation space
+        if isinstance(self.env.observation_space, spaces.Tuple):
+            self.num_states = self.env.observation_space[0].n * self.env.observation_space[1].n
+        else:
+            self.num_states = self.env.observation_space.n
+            
+        # Initialize Q-table for state-action values
+        self.q_table = np.zeros((self.num_states, self.env.action_space.n))
+
+    def learn(self, episodes, max_steps, verbose=False):
+        """Train the agent using SARSA (on-policy TD control)."""
+        if verbose:
+            print(f"Training Temporal Difference algorithm for {episodes} episodes...")
+
+        total_returns = []
+        action_counts = np.zeros(self.env.action_space.n)  # Track action distribution
+
+        for episode in range(episodes):
+            state, info = self.env.reset()
+            state_idx = Utils._state_to_index(self.env, state)
+            
+            # Get initial action using epsilon-greedy
+            action = Utils.epsilon_greedy(
+                self.env, 
+                self.q_table[state_idx], 
+                state, 
+                epsilon=self.epsilon,
+                is_q_values=True
+            )
+            
+            terminated = False
+            steps = 0
+            episode_return = 0  # Track total reward in the episode
+            q_value_update_total = 0  # Track Q-value updates to assess convergence
+            
+            while not terminated and steps < max_steps:
+                # Take action, observe reward and next state
+                next_state, reward, terminated, _, _ = self.env.step(action)
+                next_state_idx = Utils._state_to_index(self.env, next_state)
+                
+                # Choose next action using epsilon-greedy
+                next_action = Utils.epsilon_greedy(
+                    self.env,
+                    self.q_table[next_state_idx],
+                    next_state,
+                    epsilon=self.epsilon,
+                    is_q_values=True
+                )
+                
+                # Calculate Q-value update
+                q_value_update = self.alpha * (
+                    reward
+                    + self.gamma * self.q_table[next_state_idx, next_action]
+                    - self.q_table[state_idx, action]
+                )
+                
+                # Apply Q-value update
+                self.q_table[state_idx, action] += q_value_update
+                q_value_update_total += abs(q_value_update)  # Sum of absolute Q-value updates
+                
+                # Update action count for action distribution tracking
+                action_counts[action] += 1
+
+                # Accumulate return for the episode
+                episode_return += reward
+                
+                # Move to the next state and action
+                state = next_state
+                state_idx = next_state_idx
+                action = next_action
+                
+                steps += 1
+            
+            # Track return and average Q-value update for convergence insight
+            total_returns.append(episode_return)
+            avg_q_update = q_value_update_total / steps if steps > 0 else 0
+
+            # Print progress at every 10% of the episodes
+            if verbose and episode % (episodes // 10) == 0:
+                avg_return = np.mean(total_returns[-(episodes // 10):])
+                print(f"Episode {episode + 1}/{episodes} - Average Return: {avg_return:.2f}, "
+                      f"Average Q-Value Update: {avg_q_update:.4f}")
+                
+        # Display action distribution for final convergence insight
+        if verbose:
+            action_distribution = action_counts / np.sum(action_counts)
+            print("Training complete! Action distribution across episodes:", action_distribution)
+
+    def derive_policy(self):
+        """Derive the optimal policy from the learned Q-table."""
+        policy = np.zeros((self.num_states, self.env.action_space.n))
+        for s in range(self.num_states):
+            best_action = np.argmax(self.q_table[s])
+            policy[s] = np.eye(self.env.action_space.n)[best_action]
+        return policy
+    
+    def train(self, episodes=1000, max_steps=100, verbose=False):
+        """Performs Temporal Difference learning."""
+        self.learn(episodes=episodes, max_steps=max_steps, verbose=verbose)
+        policy = self.derive_policy()
+        return policy

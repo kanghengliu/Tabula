@@ -7,11 +7,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')
 from tabula.utils import Utils
 
 class MonteCarloES:
-    def __init__(self, env, gamma=1.0, epsilon=0.1, verbose=False):
+    def __init__(self, env, epsilon=0.1, gamma=1.0):
         self.env = env
         self.gamma = gamma
         self.epsilon = epsilon
-        self.verbose = verbose
         
         # Initialize state space size based on environment type
         if hasattr(env, 'grid_width') and hasattr(env, 'grid_height'):
@@ -48,8 +47,8 @@ class MonteCarloES:
             next_state, reward, terminated, truncated, _ = self.env.step(action)
             episode.append((state, action, reward))
             
-            if self.verbose:
-                print(f"Step {steps}: State={state}, Action={action}, Reward={reward}")
+            # if self.verbose:
+            #     print(f"Step {steps}: State={state}, Action={action}, Reward={reward}")
             
             steps += 1
             if steps >= max_steps:
@@ -66,14 +65,14 @@ class MonteCarloES:
         self.policy[state_idx] = np.zeros(self.env.action_space.n)
         self.policy[state_idx][best_action] = 1.0
         
-        if self.verbose:
-            print(f"Policy updated for State {state}: Best Action = {best_action}")
+        # if self.verbose:
+        #     print(f"Policy updated for State {state}: Best Action = {best_action}")
 
-    def monte_carlo_es(self, num_episodes, max_steps=100):
+    def train(self, max_steps=100, episodes=1000):
         """Performs Monte Carlo Exploring Starts."""
-        for episode_num in range(1, num_episodes + 1):
-            if self.verbose:
-                print(f"\n=== Starting Episode {episode_num} ===")
+        for episode_num in range(1, episodes + 1):
+            # if self.verbose:
+            #     print(f"\n=== Starting Episode {episode_num} ===")
                 
             episode = self.generate_episode(max_steps=max_steps)
             G = 0
@@ -89,10 +88,10 @@ class MonteCarloES:
                     self.returns[(state_idx, action)].append(G)
                     self.Q[state_idx][action] = np.mean(self.returns[(state_idx, action)])
                     
-                    if self.verbose:
-                        print(f"Updated Q-value for State {state}, Action={action}: Q[{state_idx}][{action}] = {self.Q[state_idx][action]}")
+                    # if self.verbose:
+                    #     print(f"Updated Q-value for State {state}, Action={action}: Q[{state_idx}][{action}] = {self.Q[state_idx][action]}")
                     
                     # Update policy
                     self.update_policy(state)
         
-        return self.Q, self.policy
+        return self.policy
