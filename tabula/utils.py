@@ -40,15 +40,28 @@ class Utils:
             q_values = action_values  # Here, action_values is already the Q-values for this specific state
             action_probs = np.ones(env.action_space.n) * epsilon / env.action_space.n
             best_action = np.argmax(q_values)
-            action_probs[best_action] += (1.0 - epsilon)
+            action_probs[best_action] += 1.0 - epsilon
         else:
             # Treat action_values as a policy and apply epsilon-greedy using state_idx
             state_idx = Utils._state_to_index(env, state)
             policy = action_values[state_idx]
             action_probs = (1 - epsilon) * policy + (epsilon / env.action_space.n)
 
-        # Choose an action based on the adjusted probabilities
-        return np.random.choice(np.arange(env.action_space.n), p=action_probs)
+        # Min-max normalization to [0, 1] range
+        min_prob = action_probs.min()
+        max_prob = action_probs.max()
+
+        if max_prob == min_prob:
+            # If all values are the same, use a uniform distribution
+            action_probs = np.ones(env.action_space.n)
+        else:
+            # Normalize to [0, 1] range
+            action_probs = (action_probs - min_prob) / (max_prob - min_prob)
+
+        # Use the relative weights directly
+        return np.random.choice(
+            np.arange(env.action_space.n), p=action_probs / action_probs.sum()
+        )
 
     @staticmethod
     def draw_arrow(screen, x, y, direction, size=50, color=(0, 0, 0)):
@@ -102,7 +115,9 @@ class Utils:
         pygame.draw.polygon(screen, color, arrow_head)
 
     @staticmethod
-    def render_optimal_policy(env, policy):
+    def render_optimal_policy(
+        env, policy, save_image=False, image_filename="policy_visualization.png"
+    ):
         """Renders the optimal policy using arrows for BoatEnv, GridWorldEnv, and GeosearchEnv."""
         arrow_mapping = {
             0: 2,
@@ -219,7 +234,8 @@ class Utils:
                                 direction,
                                 size=env.cell_size * 0.4,
                             )
-
+            if save_image:
+                Utils.save_image(env.screen, filename=image_filename)
             pygame.display.flip()
 
         # For BoatEnv
@@ -278,6 +294,16 @@ class Utils:
             loop=0,
         )
         print(f"Gameplay GIF saved as {filename}")
+
+    @staticmethod
+    def save_image(screen, filename="policy_visualization.png"):
+        """Saves the current Pygame screen as an image."""
+        frame = pygame.surfarray.array3d(screen)
+        image = Image.fromarray(
+            np.transpose(frame, (1, 0, 2))
+        )  # Convert for Pillow compatibility
+        image.save(filename)
+        print(f"Optimal policy visualization saved as {filename}")
 
     @staticmethod
     def run_optimal_policy(
@@ -340,4 +366,3 @@ class Utils:
             total_reward / episodes
         )  # Calculate average reward across all episodes
         print(f"Average reward following optimal policy: {avg_reward:.2f}")
-
