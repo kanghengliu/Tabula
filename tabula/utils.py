@@ -28,16 +28,25 @@ class Utils:
         return state  # For environments with Discrete space like BoatEnv
 
     @staticmethod
-    def epsilon_greedy(env, policy, state, epsilon=0.1):
-        """Returns an action using epsilon-greedy strategy."""
-        state_idx = Utils._state_to_index(env, state)
-        if np.random.rand() < epsilon:
-            return env.action_space.sample()  # Exploration: random action
+    def epsilon_greedy(env, action_values, state, epsilon=0.1, is_q_values=False):
+        """
+        Returns an action using epsilon-greedy strategy, compatible with both policies and Q-values.
+        If is_q_values is True, action_values is treated as Q-values; otherwise, as a policy.
+        """
+        if is_q_values:
+            # Treat action_values as Q-values and construct an epsilon-greedy policy
+            q_values = action_values  # Here, action_values is already the Q-values for this specific state
+            action_probs = np.ones(env.action_space.n) * epsilon / env.action_space.n
+            best_action = np.argmax(q_values)
+            action_probs[best_action] += (1.0 - epsilon)
         else:
-            # Exploitation: choose one of the top actions randomly if there is a tie
-            max_value = np.max(policy[state_idx])  # Find the maximum value in the policy
-            top_actions = np.flatnonzero(policy[state_idx] == max_value)  # Indices of actions with max value
-            return np.random.choice(top_actions)  # Randomly select one of the top actions
+            # Treat action_values as a policy and apply epsilon-greedy using state_idx
+            state_idx = Utils._state_to_index(env, state)
+            policy = action_values[state_idx]
+            action_probs = (1 - epsilon) * policy + (epsilon / env.action_space.n)
+
+        # Choose an action based on the adjusted probabilities
+        return np.random.choice(np.arange(env.action_space.n), p=action_probs)
 
     @staticmethod
     def draw_arrow(screen, x, y, direction, size=50, color=(0, 0, 0)):
