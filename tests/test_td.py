@@ -63,5 +63,14 @@ if __name__ == "__main__":
     # Visualize the optimal policy
     Utils.render_optimal_policy(env, optimal_policy)
 
+    # Run optimal policy and save GIF if required
+    print(
+        "Running optimal policy with GIF capture..."
+        if args.save_gif
+        else "Running optimal policy..."
+    )
+    Utils.run_optimal_policy(
+        env, optimal_policy, save_gif=args.save_gif, gif_filename=args.gif_filename
+    )
 
     print("Done!")
