@@ -20,6 +20,17 @@ parser.add_argument(
     help="Specify the algorithm to use: dynamic programming (dp), Monte Carlo (mc), or Temporal Difference (td)",
 )
 parser.add_argument("--verbose", action="store_true", help="Print verbose output")
+parser.add_argument(
+    "--file_path",
+    type=str,
+    default="./output",
+    help="Directory to save metrics files",
+)
+parser.add_argument(
+    "--save_metrics",
+    action="store_true",
+    help="Save the metrics of the simulation",
+)
 args = parser.parse_args()
 
 # set env and parameters
@@ -65,6 +76,11 @@ elif args.algo == "mc":
 else:
     solver = TemporalDifference(env)
 
+# define outputs
+image_filename = os.path.join(args.file_path, "policy_visualization.png")
+gif_filename = os.path.join(args.file_path, "gameplay.gif")
+convergence_plot_filename = os.path.join(args.file_path, "convergence_plot.png")
+
 # train agent
 policy = solver.train(max_steps=max_steps, episodes=episodes, verbose=args.verbose)
 
@@ -73,7 +89,9 @@ print("\nOptimal Policy:")
 print(policy)
 
 # render optimal policy
-Utils.render_optimal_policy(env, policy)
+Utils.render_optimal_policy(
+    env, policy, save_image=args.save_metrics, image_filename=image_filename
+)
 
 # Wait for a key press before continuing
 print(
@@ -90,4 +108,9 @@ while waiting:
             sys.exit()
 
 # Run the environment again, using the optimal policy and rendering it
-Utils.run_optimal_policy(env=env, policy=policy)
+Utils.run_optimal_policy(
+    env, policy, save_gif=args.save_metrics, gif_filename=gif_filename
+)
+
+if args.save_metrics:
+    Utils.plot_convergence(solver.mean_reward, file_path=convergence_plot_filename)
