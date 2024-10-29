@@ -40,7 +40,7 @@ class Utils:
             q_values = action_values  # Here, action_values is already the Q-values for this specific state
             action_probs = np.ones(env.action_space.n) * epsilon / env.action_space.n
             best_action = np.argmax(q_values)
-            action_probs[best_action] += (1.0 - epsilon)
+            action_probs[best_action] += 1.0 - epsilon
         else:
             # Treat action_values as a policy and apply epsilon-greedy using state_idx
             state_idx = Utils._state_to_index(env, state)
