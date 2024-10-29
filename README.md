@@ -34,3 +34,14 @@ python examples/example_usage.py --env grid_world --algo td --save_metrics --ver
 ```
 
 Examine the metrics in `output/` folder
+
+## Build
+
+Contributions are welcome! Build this project by installing requirements and build from source!
+
+```bash
+git clone https://github.com/kanghengliu/Tabula.git
+pip install requirements.txt
+python -m build
+```
+

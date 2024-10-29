@@ -1,0 +1,7 @@
+build==1.2.2.post1
+gymnasium==1.0.0
+matplotlib==3.9.2
+numpy==2.1.2
+packaging==24.1
+pillow==11.0.0
+pygame==2.6.1
