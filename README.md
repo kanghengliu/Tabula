@@ -1,0 +1,32 @@
+# Tabula
+
+This library aims to apply traditional reinforcement learning methods to play games!
+
+## Environment
+
+We've included three simple games: `boat`, `grid world` and `geo search`.
+
+## Solvers
+
+We've included three slovers using traditional reinforcement learning algorithms:
+
+- Dynamic Programming
+- Monte Carlo
+- Temporal Difference
+
+## Metrics
+
+We provide visualization for optimal policy and gameplay under optimal policy, along with plot for mean episodic rewards / value functions for visualizing convergence.
+
+- convergence_plot.png
+- gameplay.gif
+- policy_visualization.png
+
+## Examples
+
+Using **Temporal Difference** to solve `grid world`
+```bash
+python tests\test.py --env grid_world --algo td --save_metrics --verbose
+```
+
+Examine the metrics in `output/` folder
