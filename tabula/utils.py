@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import pickle
 import pygame
 import numpy as np
@@ -354,3 +355,14 @@ class Utils:
         )  # Calculate average reward across all episodes
         print(f"Average reward following optimal policy: {avg_reward:.2f}")
 
+    @staticmethod
+    def plot_convergence(convergence_data, file_path="convergence_plot.png"):
+        """Plots the convergence of mean reward over episodes."""
+        plt.figure()
+        plt.plot(convergence_data)
+        plt.xlabel("Episode")
+        plt.ylabel("Mean Reward")
+        plt.title("Convergence of the Mean Reward over Episodes")
+        plt.grid(True)
+        plt.savefig(file_path)
+        print(f"Convergence plot saved as {file_path}")

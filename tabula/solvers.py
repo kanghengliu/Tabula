@@ -35,6 +35,10 @@ class DynamicProgramming:
             for a in range(self.env.action_space.n)
         }
 
+        # Mean reward and mean value metrics
+        self.mean_reward = []
+        self.mean_value = []  # To track convergence of the value function
+
     def simulate(self, episodes, max_steps, verbose=False):
         """Run a long simulation to gather p(s', r | s, a) and calculate the average reward."""
         if verbose:
@@ -50,13 +54,6 @@ class DynamicProgramming:
             steps = 0  # Track the number of steps in the episode
 
             while not terminated:
-                # Check for window events to keep Pygame active
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        terminated = True
-                        self.env.close()
-                        return
-                
                 # Select an action using epsilon-greedy from Utils
                 action = Utils.epsilon_greedy(
                     self.env, self.policy, state, epsilon=self.epsilon
@@ -87,6 +84,7 @@ class DynamicProgramming:
                     terminated = True  # End the episode after reaching the step limit
 
             total_reward += episode_reward  # Add episode reward to total reward
+            self.mean_reward.append(total_reward)
 
             if episode % (episodes / 10) == 0 and verbose:
                 print(f"Episode {episode + 1}/{episodes}")
@@ -116,15 +114,6 @@ class DynamicProgramming:
                 k: np.round(v / total, 3) for k, v in transition_matrix.items()
             }
 
-        # Format and print transition model in a clean way
-        if verbose: # Print the transition model
-            print("\nTransition Model (p(s', r | s, a)):")
-            for (s, a), transitions in self.transition_model.items():
-                print(f"State {int(s)}, Action {int(a)}:")
-                for (next_state, reward), prob in transitions.items():
-                    print(f"    Next State: {int(next_state)}, Reward: {int(reward)}, Probability: {float(prob)}")
-
-        # Make sure to return the transition model
         return self.transition_model
 
     def value_iteration(self, max_iterations=1000, tol=1e-3, verbose=False):
@@ -146,6 +135,11 @@ class DynamicProgramming:
                     action_values.append(q_sa)
 
                 new_value_table[s] = max(action_values)
+
+            # Track the mean value for convergence plotting
+            mean_value = np.mean(new_value_table)
+            self.mean_value.append(mean_value)
+
             # Check for convergence
             if np.max(np.abs(new_value_table - self.value_table)) < tol:
                 if verbose:
@@ -213,6 +207,9 @@ class DynamicProgramming:
 
         return self.policy
 
+    def save_convergence_plot(self, file_path="dp_convergence_plot.png"):
+        """Save the convergence plot using Utils."""
+        Utils.plot_convergence(self.mean_value, file_path=file_path)
 
     def train(self, max_steps=100, episodes=1000, verbose=False):
         """Train the agent using dynamic programming."""
@@ -248,6 +245,7 @@ class MonteCarloES:
             / self.env.action_space.n
         )
         self.returns = defaultdict(list)
+        self.mean_reward = []
 
     def _get_state_index(self, state):
         """Convert state to index format expected by Utils."""
@@ -343,13 +341,16 @@ class MonteCarloES:
             avg_q_update = np.mean(episode_q_updates) if episode_q_updates else 0
             q_value_updates.append(avg_q_update)
             total_returns.append(G)
+            avg_return = np.mean(total_returns[-(episodes // 10) :])
+            self.mean_reward.append(avg_return)
 
             if verbose and episode_num % (episodes // 10) == 0:
-                avg_return = np.mean(total_returns[-(episodes // 10):])
-                avg_recent_q_update = np.mean(q_value_updates[-(episodes // 10):])
-                print(f"Episode {episode_num}/{episodes} - "
-                      f"Average Return: {avg_return:.2f}, "
-                      f"Average Q-Value Update: {avg_recent_q_update:.4f}")
+                avg_recent_q_update = np.mean(q_value_updates[-(episodes // 10) :])
+                print(
+                    f"Episode {episode_num}/{episodes} - "
+                    f"Average Return: {avg_return:.2f}, "
+                    f"Average Q-Value Update: {avg_recent_q_update:.4f}"
+                )
 
         if verbose:
             action_distribution = action_counts / np.sum(action_counts)
@@ -380,6 +381,9 @@ class TemporalDifference:
 
         # Initialize Q-table for state-action values
         self.q_table = np.zeros((self.num_states, self.env.action_space.n))
+
+        # Track mean Q-value for convergence plot
+        self.mean_reward = []
 
     def learn(self, episodes, max_steps, verbose=False):
         """Train the agent using SARSA (on-policy TD control)."""
@@ -450,13 +454,16 @@ class TemporalDifference:
             # Track return and average Q-value update for convergence insight
             total_returns.append(episode_return)
             avg_q_update = q_value_update_total / steps if steps > 0 else 0
+            avg_return = np.mean(total_returns[-(episodes // 10) :])
+            self.mean_reward.append(avg_return)
 
             # Print progress at every 10% of the episodes
             if verbose and episode % (episodes // 10) == 0:
-                avg_return = np.mean(total_returns[-(episodes // 10):])
-                print(f"Episode {episode + 1}/{episodes} - Average Return: {avg_return:.2f}, "
-                      f"Average Q-Value Update: {avg_q_update:.4f}")
-                
+                print(
+                    f"Episode {episode + 1}/{episodes} - Average Return: {avg_return:.2f}, "
+                    f"Average Q-Value Update: {avg_q_update:.4f}"
+                )
+
         # Display action distribution for final convergence insight
         if verbose:
             action_distribution = action_counts / np.sum(action_counts)
