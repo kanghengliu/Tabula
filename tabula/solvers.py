@@ -6,7 +6,6 @@ from gymnasium import spaces
 
 from tabula.utils import Utils  # Import the Utils class
 
-
 class DynamicProgramming:
     def __init__(self, env, epsilon=0.1, gamma=0.9):
         self.env = env
@@ -221,7 +220,7 @@ class DynamicProgramming:
 class MonteCarlo:
     def __init__(self, env, epsilon=0.1, gamma=1.0):
         """
-        Initialize the Monte Carlo ES (Exploring Starts) agent.
+        Initialize the Monte Carlo agent.
 
         Args:
             env: OpenAI Gym environment
@@ -485,4 +484,3 @@ class TemporalDifference:
         self.learn(episodes=episodes, max_steps=max_steps, verbose=verbose)
         policy = self.derive_policy()
         return policy
-
