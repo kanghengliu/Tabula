@@ -1,4 +1,31 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+
+# Output files and generated documentation
 output/
 docs/_extensions/
 docs/style/
+
+# Test artifacts
+test-output/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Quarto files
+*.qmd
+
+# Other temporary files
+.DS_Store
+*.swp
+*.swo
+Thumbs.db

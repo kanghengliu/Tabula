@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tabula"
+version = "0.1.0"
+description = "A package for traditional reinforcement learning methods in simple games"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Kangheng Liu", email = "kl1099@georgetown.edu" },
+    { name = "William McGloin", email = "wtm30@georgetown.edu" }
+]
+maintainers = [
+    { name = "Kangheng Liu", email = "kl1099@georgetown.edu" },
+    { name = "William McGloin", email = "wtm30@georgetown.edu" }
+]
+keywords = ["reinforcement learning", "games", "AI"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpy>=1.21.0",
+    "matplotlib>=3.4.2",
+    "gymnasium>=1.0.0",
+    "pillow>=11.0.0",
+    "pygame>=2.6.1"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/kanghengliu/tabula"
+"Documentation" = "https://github.com/kanghengliu/tabula"
+"Source Code" = "https://github.com/kanghengliu/tabula"
+"Issue Tracker" = "https://github.com/kanghengliu/tabula/issues"
+
+[tool.setuptools.package-data]
+"tabula" = ["assets/*.png"]
