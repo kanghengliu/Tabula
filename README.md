@@ -26,7 +26,7 @@ We provide visualization for optimal policy and gameplay under optimal policy, a
 
 Using **Temporal Difference** to solve `grid world`
 ```bash
-python tests\test.py --env grid_world --algo td --save_metrics --verbose
+python test.py --env grid_world --algo td --save_metrics --verbose
 ```
 
 Examine the metrics in `output/` folder
