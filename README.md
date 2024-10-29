@@ -22,11 +22,15 @@ We provide visualization for optimal policy and gameplay under optimal policy, a
 - gameplay.gif
 - policy_visualization.png
 
+## Installation
+
+Download latest release and install via `pip install` or other package manager of choice.
+
 ## Examples
 
 Using **Temporal Difference** to solve `grid world`
 ```bash
-python test.py --env grid_world --algo td --save_metrics --verbose
+python examples/example_usage.py --env grid_world --algo td --save_metrics --verbose
 ```
 
 Examine the metrics in `output/` folder
