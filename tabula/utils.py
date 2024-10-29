@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pickle
 import pygame
+import os
 import numpy as np
 from PIL import Image  # Add for GIF creation
 from tabula.environments import *  # Import environments
@@ -8,8 +9,16 @@ from tabula.environments import *  # Import environments
 
 class Utils:
     @staticmethod
+    def _ensure_directory_exists(file_path):
+        """Ensures the parent directory of the given file path exists."""
+        directory = os.path.dirname(file_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+
+    @staticmethod
     def save_policy(policy, filename="optimal_policy.pkl"):
         """Saves the optimal policy to a file."""
+        Utils._ensure_directory_exists(filename)
         with open(filename, "wb") as f:
             pickle.dump(policy, f)
         print(f"Optimal policy saved to {filename}")
@@ -17,6 +26,7 @@ class Utils:
     @staticmethod
     def load_policy(filename="optimal_policy.pkl"):
         """Loads the optimal policy from a file."""
+        Utils._ensure_directory_exists(filename)
         with open(filename, "rb") as f:
             policy = pickle.load(f)
         print(f"Optimal policy loaded from {filename}")
@@ -107,6 +117,7 @@ class Utils:
         env, policy, save_image=False, image_filename="policy_visualization.png"
     ):
         """Renders the optimal policy using arrows for BoatEnv, GridWorldEnv, and GeosearchEnv."""
+        Utils._ensure_directory_exists(image_filename)
         arrow_mapping = {
             0: 2,
             1: 3,
@@ -273,6 +284,7 @@ class Utils:
     @staticmethod
     def create_gif(frames, filename="gameplay.gif", duration=100):
         """Creates a GIF from a list of Pygame frames."""
+        Utils._ensure_directory_exists(filename)
         pil_images = [Image.fromarray(frame) for frame in frames]
         pil_images[0].save(
             filename,
@@ -286,6 +298,7 @@ class Utils:
     @staticmethod
     def save_image(screen, filename="policy_visualization.png"):
         """Saves the current Pygame screen as an image."""
+        Utils._ensure_directory_exists(filename)
         frame = pygame.surfarray.array3d(screen)
         image = Image.fromarray(
             np.transpose(frame, (1, 0, 2))
@@ -304,6 +317,7 @@ class Utils:
         gif_filename="gameplay.gif",
     ):
         """Simulate episodes following the optimal policy, render, and optionally save as GIF."""
+        Utils._ensure_directory_exists(gif_filename)
         frames = []
         total_reward = 0  # Track total reward across all episodes
 
@@ -358,6 +372,7 @@ class Utils:
     @staticmethod
     def plot_convergence(convergence_data, file_path="convergence_plot.png"):
         """Plots the convergence of mean reward over episodes."""
+        Utils._ensure_directory_exists(file_path)
         plt.figure()
         plt.plot(convergence_data)
         plt.xlabel("Episode")
