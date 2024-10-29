@@ -72,7 +72,7 @@ else:  # geosearch case
 if args.algo == "dp":
     solver = DynamicProgramming(env)
 elif args.algo == "mc":
-    solver = MonteCarloES(env)
+    solver = MonteCarlo(env)
 else:
     solver = TemporalDifference(env)
 

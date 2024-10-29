@@ -218,7 +218,7 @@ class DynamicProgramming:
         return self.value_iteration()
 
 
-class MonteCarloES:
+class MonteCarlo:
     def __init__(self, env, epsilon=0.1, gamma=1.0):
         """
         Initialize the Monte Carlo ES (Exploring Starts) agent.

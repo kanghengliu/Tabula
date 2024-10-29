@@ -1,7 +1,7 @@
 # ./unit_tests/test_solvers.py
 import unittest
 from tabula.environments import BoatEnv
-from tabula.solvers import DynamicProgramming, MonteCarloES, TemporalDifference
+from tabula.solvers import DynamicProgramming, MonteCarlo, TemporalDifference
 import numpy as np
 
 
@@ -21,10 +21,10 @@ class TestDynamicProgramming(unittest.TestCase):
         self.assertIsInstance(policy, np.ndarray)
 
 
-class TestMonteCarloES(unittest.TestCase):
+class TestMonteCarlo(unittest.TestCase):
     def setUp(self):
         self.env = BoatEnv()
-        self.solver = MonteCarloES(self.env)
+        self.solver = MonteCarlo(self.env)
 
     def test_q_table_initialization(self):
         self.assertEqual(
