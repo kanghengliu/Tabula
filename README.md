@@ -45,3 +45,8 @@ pip install requirements.txt
 python -m build
 ```
 
+Run unit tests in `unit_tests` folder to test your code!
+
+```bash
+python -m unittest discover ./unit_tests/
+```
