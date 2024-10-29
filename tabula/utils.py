@@ -279,6 +279,8 @@ class Utils:
                         color=(0, 0, 0),
                     )
 
+            if save_image:
+                Utils.save_image(env.screen, filename=image_filename)
             pygame.display.flip()
 
     @staticmethod
