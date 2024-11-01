@@ -113,97 +113,166 @@ class DynamicProgramming:
                 k: np.round(v / total, 3) for k, v in transition_matrix.items()
             }
 
+            # Format and print transition model in a clean way
+            if verbose: # Print the transition model
+                print("Transition Model (p(s', r | s, a)):")
+                for (s, a), transitions in self.transition_model.items():
+                    print(f"State {int(s)}, Action {int(a)}:")
+                    for (next_state, reward), prob in transitions.items():
+                        print(f"    Next State: {int(next_state)}, Reward: {int(reward)}, Probability: {float(prob)}")
+
+
         return self.transition_model
 
     def value_iteration(self, max_iterations=1000, tol=1e-3, verbose=False):
-        """Perform value iteration to find the optimal policy."""
+        """
+        Perform value iteration to find the optimal policy.
+        
+        Args:
+            max_iterations: Maximum number of iterations
+            tol: Convergence tolerance
+            verbose: Whether to print convergence information
+        
+        Returns:
+            Optimal policy as numpy array
+        """
+        if verbose:
+            print("\nStarting value iteration...")
+        
         for i in range(max_iterations):
-            new_value_table = np.copy(self.value_table)
-
+            delta = 0
+            new_value_table = np.zeros_like(self.value_table)
+            
+            # Update each state
             for s in range(self.num_states):
+                # Store the old value
+                v = self.value_table[s]
+                
+                # Compute new value using Bellman optimality backup
                 action_values = []
-
                 for a in range(self.env.action_space.n):
                     q_sa = 0
-                    for (next_state, reward), prob in self.transition_model.get(
-                        (s, a), {}
-                    ).items():
-                        q_sa += prob * (
-                            reward + self.gamma * self.value_table[next_state]
-                        )
+                    # Sum over all possible next states and rewards
+                    for (next_state, reward), prob in self.transition_model.get((s, a), {}).items():
+                        q_sa += prob * (reward + self.gamma * self.value_table[next_state])
                     action_values.append(q_sa)
-
-                new_value_table[s] = max(action_values)
-
-            # Track the mean value for convergence plotting
-            mean_value = np.mean(new_value_table)
-            self.mean_value.append(mean_value)
-
-            # Check for convergence
-            if np.max(np.abs(new_value_table - self.value_table)) < tol:
-                if verbose:
-                    print(f"\nValue iteration converged at iteration {i}")
-                break
-
+                
+                # Update the value table with the maximum action value
+                new_value_table[s] = max(action_values) if action_values else 0
+                
+                # Track maximum change in value
+                delta = max(delta, abs(v - new_value_table[s]))
+            
+            # Update value table
             self.value_table = new_value_table
-
-        # Derive the optimal policy
+            
+            # Track mean value for convergence plotting
+            mean_value = np.mean(self.value_table)
+            self.mean_value.append(mean_value)
+            
+            if verbose and i % (max_iterations // 10) == 0:
+                print(f"Iteration {i}: Mean Value = {mean_value:.3f}, Max Delta = {delta:.3f}")
+            
+            # Check for convergence
+            if delta < tol:
+                if verbose:
+                    print(f"Value iteration converged after {i+1} iterations")
+                break
+        
+        # Derive optimal policy
         for s in range(self.num_states):
-            action_values = []
+            action_values = np.zeros(self.env.action_space.n)
             for a in range(self.env.action_space.n):
-                q_sa = 0
-                for (next_state, reward), prob in self.transition_model.get(
-                    (s, a), {}
-                ).items():
-                    q_sa += prob * (reward + self.gamma * self.value_table[next_state])
-                action_values.append(q_sa)
-            self.policy[s] = np.eye(self.env.action_space.n)[np.argmax(action_values)]
-
+                for (next_state, reward), prob in self.transition_model.get((s, a), {}).items():
+                    action_values[a] += prob * (reward + self.gamma * self.value_table[next_state])
+            
+            # Set policy to be greedy with respect to the optimal values
+            self.policy[s] = np.zeros(self.env.action_space.n)
+            self.policy[s][np.argmax(action_values)] = 1.0
+        
+        if verbose:
+            print("\nFinal State Values:")
+            for s in range(self.num_states):
+                print(f"State {s}: {self.value_table[s]:.3f}")
+        
         return self.policy
 
     def policy_iteration(self, max_iterations=1000, tol=1e-3, verbose=False):
-        """Perform policy iteration to find the optimal policy."""
-        for i in range(max_iterations):
-            new_value_table = np.copy(self.value_table)
-
-            for s in range(self.num_states):
-                a = np.argmax(self.policy[s])
-                v_s = 0
-                for (next_state, reward), prob in self.transition_model.get(
-                    (s, a), {}
-                ).items():
-                    v_s += prob * (reward + self.gamma * self.value_table[next_state])
-                new_value_table[s] = v_s
-
-            mean_value = np.mean(new_value_table)
+        """
+        Perform policy iteration to find the optimal policy.
+        
+        Args:
+            max_iterations: Maximum number of iterations
+            tol: Convergence tolerance
+            verbose: Whether to print convergence information
+            
+        Returns:
+            Optimal policy as numpy array
+        """
+        if verbose:
+            print("\nStarting policy iteration...")
+        
+        for iteration in range(max_iterations):
+            # Policy Evaluation Step
+            delta = float('inf')
+            while delta > tol:
+                delta = 0
+                new_value_table = np.zeros_like(self.value_table)
+                
+                # Evaluate current policy for each state
+                for s in range(self.num_states):
+                    v = self.value_table[s]
+                    
+                    # Get current action from policy
+                    a = np.argmax(self.policy[s])
+                    
+                    # Compute value using current policy
+                    value = 0
+                    for (next_state, reward), prob in self.transition_model.get((s, a), {}).items():
+                        value += prob * (reward + self.gamma * self.value_table[next_state])
+                    
+                    new_value_table[s] = value
+                    delta = max(delta, abs(v - value))
+                
+                self.value_table = new_value_table
+            
+            # Track mean value for convergence plotting
+            mean_value = np.mean(self.value_table)
             self.mean_value.append(mean_value)
-
-            stable_policy = True
-
+            
+            if verbose and iteration % (max_iterations // 10) == 0:
+                print(f"Iteration {iteration}: Mean Value = {mean_value:.3f}")
+            
+            # Policy Improvement Step
+            policy_stable = True
+            
             for s in range(self.num_states):
-                action_values = []
+                old_action = np.argmax(self.policy[s])
+                
+                # Compute action values for all actions
+                action_values = np.zeros(self.env.action_space.n)
                 for a in range(self.env.action_space.n):
-                    q_sa = 0
-                    for (next_state, reward), prob in self.transition_model.get(
-                        (s, a), {}
-                    ).items():
-                        q_sa += prob * (
-                            reward + self.gamma * new_value_table[next_state]
-                        )
-                    action_values.append(q_sa)
+                    for (next_state, reward), prob in self.transition_model.get((s, a), {}).items():
+                        action_values[a] += prob * (reward + self.gamma * self.value_table[next_state])
+                
+                # Update policy to be greedy with respect to action values
                 best_action = np.argmax(action_values)
-
-                if np.argmax(self.policy[s]) != best_action:
-                    stable_policy = False
-                self.policy[s] = np.eye(self.env.action_space.n)[best_action]
-
-            self.value_table = new_value_table
-
-            if stable_policy:
+                if old_action != best_action:
+                    policy_stable = False
+                
+                # Update policy to be deterministic for best action
+                self.policy[s] = np.zeros(self.env.action_space.n)
+                self.policy[s][best_action] = 1.0
+            
+            # Check if the policy has converged
+            if policy_stable:
                 if verbose:
-                    print(f"\nPolicy iteration converged at iteration {i}")
+                    print(f"\nPolicy iteration converged after {iteration + 1} iterations")
+                    print("\nFinal State Values:")
+                    for s in range(self.num_states):
+                        print(f"State {s}: {self.value_table[s]:.3f}")
                 break
-
+        
         return self.policy
 
     def save_convergence_plot(self, file_path="dp_convergence_plot.png"):
@@ -214,7 +283,8 @@ class DynamicProgramming:
         """Train the agent using dynamic programming."""
         self.simulate(episodes=episodes, max_steps=max_steps, verbose=verbose)
         self.compute_transition_model(verbose=verbose)
-        return self.value_iteration()
+        policy = self.value_iteration(verbose=verbose)
+        return policy
 
 
 class MonteCarlo:
@@ -360,6 +430,10 @@ class MonteCarlo:
             print(f"Final Average Return: {np.mean(total_returns):.2f}")
             print(f"Final Average Q-Value Update: {np.mean(q_value_updates):.4f}")
 
+        # Print final action values if verbose is True
+        if verbose:
+            print("Final Action Values (Q):\n", self.Q)
+
         return self.policy
 
 
@@ -483,4 +557,9 @@ class TemporalDifference:
         """Performs Temporal Difference learning."""
         self.learn(episodes=episodes, max_steps=max_steps, verbose=verbose)
         policy = self.derive_policy()
+
+        # Print final action values if verbose is True
+        if verbose:
+            print("Final Action Values (Q):\n", self.q_table)
+
         return policy
