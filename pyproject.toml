@@ -38,5 +38,7 @@ dependencies = [
 "Source Code" = "https://github.com/kanghengliu/tabula"
 "Issue Tracker" = "https://github.com/kanghengliu/tabula/issues"
 
+[tool.setuptools]
+packages = ['tabula']
 [tool.setuptools.package-data]
 "tabula" = ["assets/*.png"]
