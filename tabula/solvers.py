@@ -95,7 +95,7 @@ class DynamicProgramming:
             )  # Calculate average reward across all episodes
             print(f"\nAverage reward during random simulation: {avg_reward:.2f}")
 
-    def compute_transition_model(self, verbose=False):
+    def compute_transition_model(self, print_transition_model=False):
         """Computes the transition probabilities p(s', r | s, a) from simulation data"""
         self.transition_model = {}
         for (s, a), transitions in self.transition_counts.items():
@@ -114,7 +114,7 @@ class DynamicProgramming:
             }
 
             # Format and print transition model in a clean way
-            if verbose: # Print the transition model
+            if print_transition_model: # Print the transition model
                 print("Transition Model (p(s', r | s, a)):")
                 for (s, a), transitions in self.transition_model.items():
                     print(f"State {int(s)}, Action {int(a)}:")
@@ -279,11 +279,16 @@ class DynamicProgramming:
         """Save the convergence plot using Utils."""
         Utils.plot_convergence(self.mean_value, file_path=file_path)
 
-    def train(self, max_steps=100, episodes=1000, verbose=False):
+    def train(self, max_steps=100, episodes=1000, verbose=False, method="value", print_transition_model=False):
         """Train the agent using dynamic programming."""
         self.simulate(episodes=episodes, max_steps=max_steps, verbose=verbose)
-        self.compute_transition_model(verbose=verbose)
-        policy = self.value_iteration(verbose=verbose)
+        self.compute_transition_model(print_transition_model=print_transition_model)
+        if method == "value":
+            policy = self.value_iteration(verbose=verbose)
+        elif method == "policy":
+            policy = self.policy_iteration(verbose=verbose)
+        else:
+            raise ValueError("Invalid method. Choose 'value' or 'policy'.")
         return policy
 
 
