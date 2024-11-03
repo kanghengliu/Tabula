@@ -117,6 +117,14 @@ class Utils:
         env, policy, save_image=False, image_filename="policy_visualization.png"
     ):
         """Renders the optimal policy using arrows for BoatEnv, GridWorldEnv, and GeosearchEnv."""
+        # Ensure rendering is initialized
+        if env.render_mode is not None and env.screen is None:
+            env._init_render()
+            
+        if env.screen is None:
+            print("Warning: Cannot render policy without display mode. Set render_mode='human' when creating environment.")
+            return
+
         Utils._ensure_directory_exists(image_filename)
         arrow_mapping = {
             0: 2,
@@ -319,6 +327,14 @@ class Utils:
         gif_filename="gameplay.gif",
     ):
         """Simulate episodes following the optimal policy, render, and optionally save as GIF."""
+        # Ensure rendering is initialized
+        if env.render_mode is not None and env.screen is None:
+            env._init_render()
+            
+        if env.screen is None:
+            print("Warning: Cannot render policy without display mode. Set render_mode='human' when creating environment.")
+            return
+
         Utils._ensure_directory_exists(gif_filename)
         frames = []
         total_reward = 0  # Track total reward across all episodes
