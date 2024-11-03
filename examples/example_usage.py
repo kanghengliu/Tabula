@@ -35,7 +35,7 @@ args = parser.parse_args()
 
 # set env and parameters
 if args.env == "boat":
-    env = BoatEnv()
+    env = BoatEnv(render_mode="human")
     if args.algo == "dp":
         episodes = 500
         max_steps = 50
@@ -46,7 +46,7 @@ if args.env == "boat":
         episodes = 250
         max_steps = 25
 elif args.env == "grid_world":
-    env = GridWorldEnv()
+    env = GridWorldEnv(render_mode="human")
     if args.algo == "dp":
         episodes = 5000
         max_steps = 50
@@ -57,7 +57,7 @@ elif args.env == "grid_world":
         episodes = 5000
         max_steps = 50
 else:  # geosearch case
-    env = GeosearchEnv()
+    env = GeosearchEnv(render_mode="human")
     if args.algo == "dp":
         episodes = 1000
         max_steps = 25
